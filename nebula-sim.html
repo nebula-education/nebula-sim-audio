@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nebula · Call Simulation</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Questrial&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:#151821;}
+.app{font-family:'Questrial',sans-serif;background:#151821;color:#F4F4E6;min-height:100vh;display:flex;flex-direction:column;position:relative;}
+h1,.hdr-brand,.tcard-title,.go-btn,.eyebrow,.choices-lbl,.c-lbl,.end-title,.end-sub,.fb-score,.next-btn,.again-btn{font-family:'Lora',Georgia,serif;}
+.stars{position:fixed;inset:0;pointer-events:none;background:radial-gradient(1px 1px at 12% 18%,rgba(244,244,230,.5) 0%,transparent 100%),radial-gradient(1px 1px at 42% 8%,rgba(92,206,255,.4) 0%,transparent 100%),radial-gradient(1px 1px at 87% 14%,rgba(99,120,253,.5) 0%,transparent 100%),radial-gradient(2px 2px at 78% 52%,rgba(99,120,253,.3) 0%,transparent 100%);}
+.glow{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 55% 45% at 15% 25%,rgba(99,120,253,.13) 0%,transparent 65%),radial-gradient(ellipse 45% 40% at 85% 70%,rgba(92,206,255,.09) 0%,transparent 65%);}
+#particles{position:fixed;inset:0;pointer-events:none;z-index:100;}
+.screen{display:none;position:relative;z-index:1;flex-direction:column;flex:1;}
+.screen.on{display:flex;}
+#intro{align-items:center;padding:48px 24px 40px;text-align:center;justify-content:center;min-height:100vh;}
+.eyebrow{font-size:10px;letter-spacing:.5em;color:#5CCEFF;text-transform:uppercase;opacity:.8;margin-bottom:16px;}
+.intro-h{font-family:'Lora',serif;font-size:clamp(26px,5vw,46px);font-weight:600;font-style:italic;line-height:1.15;margin-bottom:10px;}
+.intro-h .ac{color:#6378FD;}
+.intro-p{font-size:14px;color:#8892b0;margin-bottom:36px;}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;max-width:580px;width:100%;margin-bottom:24px;}
+.tcard{background:#1d2235;border:1.5px solid rgba(99,120,253,.15);border-radius:14px;padding:20px 18px;cursor:pointer;transition:all .2s;text-align:left;}
+.tcard:hover,.tcard.sel{border-color:#6378FD;background:rgba(99,120,253,.08);}
+.tcard.sel{box-shadow:0 0 0 1px #6378FD,0 0 24px rgba(99,120,253,.18);}
+.tcard-ico{font-size:24px;margin-bottom:10px;display:block;}
+.tcard-title{font-size:15px;font-weight:600;color:#F4F4E6;margin-bottom:4px;}
+.tcard-desc{font-size:12px;color:#8892b0;line-height:1.55;}
+.go-btn{background:linear-gradient(135deg,#6378FD,#4d62d8);border:none;border-radius:100px;padding:15px 52px;color:#F4F4E6;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 4px 28px rgba(99,120,253,.35);transition:all .22s;}
+.go-btn:hover:not(:disabled){transform:translateY(-2px);}
+.go-btn:disabled{opacity:.3;cursor:not-allowed;}
+.sim-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 28px;border-bottom:1px solid rgba(99,120,253,.15);background:rgba(21,24,33,.95);backdrop-filter:blur(14px);position:sticky;top:0;z-index:20;}
+.hdr-brand{font-size:17px;font-weight:600;font-style:italic;}
+.hdr-brand span{color:#6378FD;}
+.live-badge{display:flex;align-items:center;gap:6px;background:rgba(240,96,80,.12);border:1px solid rgba(240,96,80,.3);border-radius:100px;padding:5px 13px;font-size:11px;color:#F06050;}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#F06050;animation:pulse 1.8s ease-in-out infinite;}
+.turn-pill{font-size:12px;color:#8892b0;}
+.feed{flex:1;padding:28px 20px 60px;}
+.inner{max-width:700px;width:100%;margin:0 auto;display:flex;flex-direction:column;}
+.c-row{display:flex;gap:13px;margin-bottom:8px;animation:up .35s ease both;}
+.c-av{width:36px;height:36px;border-radius:50%;background:#242a40;border:1.5px solid rgba(99,120,253,.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:2px;}
+.c-lbl{font-size:9px;color:#6378FD;letter-spacing:.2em;text-transform:uppercase;margin-bottom:5px;}
+.c-bub{background:#1d2235;border:1px solid rgba(99,120,253,.18);border-radius:4px 15px 15px 15px;padding:13px 17px;font-size:13.5px;line-height:1.65;color:#F4F4E6;font-style:italic;font-family:'Lora',serif;}
+.choices-wrap{margin:16px 0 8px 49px;animation:up .4s ease both;}
+.choices-lbl{font-size:9px;letter-spacing:.25em;text-transform:uppercase;margin-bottom:10px;color:#5CCEFF;}
+.choices-list{display:flex;flex-direction:column;gap:9px;}
+.c-btn{background:#1d2235;border:1.5px solid rgba(92,206,255,.15);border-radius:11px;padding:13px 15px;color:#F4F4E6;font-family:'Questrial',sans-serif;font-size:13px;line-height:1.55;cursor:pointer;text-align:left;transition:all .18s;position:relative;width:100%;overflow:hidden;}
+.c-btn:hover:not(:disabled){border-color:rgba(92,206,255,.4);background:rgba(92,206,255,.05);}
+.c-btn:disabled{cursor:default;}
+.c-btn.correct{border-color:#5cce8f;background:rgba(92,206,143,.08);animation:correctPulse .7s ease;}
+.c-btn.wrong-pick{border-color:#F06050;background:rgba(240,96,80,.07);opacity:.7;animation:shake .4s ease;}
+.c-btn.neutral{opacity:.4;}
+.c-tag{position:absolute;top:9px;right:11px;font-size:9px;font-family:'Questrial',sans-serif;letter-spacing:.1em;padding:2px 7px;border-radius:100px;}
+.tag-ok{background:rgba(92,206,143,.2);color:#5cce8f;}
+.tag-no{background:rgba(240,96,80,.2);color:#F06050;}
+.fb-card{margin:10px 0 10px 49px;background:#1d2235;border:1px solid rgba(99,120,253,.22);border-radius:13px;padding:17px 20px;animation:up .4s ease both;}
+.fb-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:11px;border-bottom:1px solid rgba(99,120,253,.12);}
+.fb-score{font-size:25px;font-weight:600;}
+.fb-row{margin-bottom:9px;}
+.fb-rlbl{font-size:9px;color:#8892b0;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;font-family:'Questrial',sans-serif;}
+.fb-good{font-size:12.5px;color:#F4F4E6;line-height:1.6;border-left:2px solid #5cce8f;padding-left:9px;}
+.fb-bad{font-size:12.5px;color:#F4F4E6;line-height:1.6;border-left:2px solid #F06050;padding-left:9px;}
+.fb-mid{font-size:12.5px;color:#F4F4E6;line-height:1.6;border-left:2px solid #e8c97a;padding-left:9px;}
+.next-btn{margin:14px 0 24px 49px;background:linear-gradient(135deg,#6378FD,#4d62d8);border:none;border-radius:100px;padding:13px 34px;color:#F4F4E6;font-size:13px;font-weight:600;cursor:pointer;animation:up .5s ease both;transition:all .2s;display:inline-block;}
+.next-btn:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(99,120,253,.4);}
+.end-wrap{max-width:640px;margin:0 auto;background:#1d2235;border:1.5px solid #6378FD;border-radius:18px;padding:40px 32px;text-align:center;animation:up .5s ease both;margin-top:8px;box-shadow:0 0 50px rgba(99,120,253,.12);}
+.end-title{font-family:'Lora',serif;font-size:28px;font-weight:600;font-style:italic;color:#5CCEFF;margin-bottom:5px;}
+.end-type{font-size:12px;color:#8892b0;margin-bottom:20px;}
+.end-num{font-family:'Lora',serif;font-size:58px;font-weight:700;color:#F4F4E6;line-height:1;margin-bottom:3px;}
+.end-sub{font-family:'Lora',serif;font-size:10px;color:#6378FD;letter-spacing:.25em;text-transform:uppercase;margin-bottom:20px;}
+.end-box{background:rgba(99,120,253,.06);border:1px solid rgba(99,120,253,.15);border-radius:11px;padding:20px;font-size:13.5px;color:#F4F4E6;line-height:1.75;text-align:left;font-style:italic;font-family:'Lora',serif;margin-bottom:22px;}
+.medal{display:inline-block;font-size:52px;margin-bottom:14px;animation:medalPop .7s cubic-bezier(.175,.885,.32,1.275) both;}
+.again-btn{background:transparent;border:1.5px solid #6378FD;border-radius:100px;padding:13px 40px;color:#6378FD;font-size:14px;font-style:italic;cursor:pointer;transition:all .2s;}
+.again-btn:hover{background:rgba(99,120,253,.1);}
+@keyframes up{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+@keyframes correctPulse{0%{box-shadow:0 0 0 0 rgba(92,206,143,.7);}60%{box-shadow:0 0 0 14px rgba(92,206,143,0);}100%{box-shadow:0 0 0 0 rgba(92,206,143,0);}}
+@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-7px);}40%{transform:translateX(7px);}60%{transform:translateX(-4px);}80%{transform:translateX(4px);}}
+@keyframes medalPop{0%{transform:scale(0) rotate(-20deg);opacity:0;}70%{transform:scale(1.25) rotate(5deg);}100%{transform:scale(1) rotate(0);opacity:1;}}
+@media(max-width:600px){.grid{grid-template-columns:1fr;}.choices-wrap,.fb-card,.next-btn{margin-left:0;}.feed{padding:20px 14px 40px;}}
+</style>
+</head>
+<body>
+<canvas id="particles"></canvas>
+<div class="app">
+<div class="stars"></div><div class="glow"></div>
+<div id="intro" class="screen on">
+  <div class="eyebrow">Nebula · Call Training</div>
+  <h1 class="intro-h">Difficult Caller<br><span class="ac">Simulation</span></h1>
+  <p class="intro-p">Choose a caller type — then pick the best response each turn</p>
+  <div class="grid">
+    <div class="tcard" data-type="aggressive" onclick="pick(this)"><span class="tcard-ico">⚡</span><div class="tcard-title">Aggressive</div><div class="tcard-desc">Rude, dismissive, challenges your credibility. Tests your calm and authority.</div></div>
+    <div class="tcard" data-type="chaotic" onclick="pick(this)"><span class="tcard-ico">🌀</span><div class="tcard-title">Chaotic</div><div class="tcard-desc">Jumps between topics, contradicts themselves. Hard to find a clear focus.</div></div>
+    <div class="tcard" data-type="silent" onclick="pick(this)"><span class="tcard-ico">🌑</span><div class="tcard-title">Silent</div><div class="tcard-desc">One-word answers, long pauses. You carry the conversation.</div></div>
+    <div class="tcard" data-type="emotional" onclick="pick(this)"><span class="tcard-ico">💧</span><div class="tcard-title">Emotional</div><div class="tcard-desc">Crying, overwhelmed, in pain. Needs a safe space — not quick fixes.</div></div>
+  </div>
+  <button class="go-btn" id="goBtn" onclick="start()" disabled>Begin the Call</button>
+</div>
+<div id="sim" class="screen">
+  <div class="sim-hdr">
+    <div class="hdr-brand">Nebula<span>.</span></div>
+    <div class="live-badge"><div class="live-dot"></div><span id="liveLabel">Live Call</span></div>
+    <div class="turn-pill" id="turnPill">Turn 1 of 6</div>
+  </div>
+  <div class="feed" id="feed"><div class="inner" id="inner"></div></div>
+</div>
+</div>
+<script>
+const SC={
+aggressive:[
+  {c:"I don't even know why I'm calling. This is probably just some scam. My boyfriend and I have been fighting constantly and my friend said to try this but… whatever, prove you're not a waste of my time.",o:[{t:"I completely understand your skepticism — many people feel that way at first. I'm here to listen, not to judge. Can you tell me a little more about what's been happening with your boyfriend?",q:"best",e:"Acknowledges her doubt without defensiveness, validates her feeling, and gently opens the door to share more."},{t:"I'm sorry you feel that way. I'll do my best to help you today.",q:"acceptable",e:"Polite but too passive — doesn't validate her skepticism or invite her to open up further."},{t:"Let's not focus on doubts — I'm already sensing powerful energy around your relationship. Shall we begin?",q:"wrong",e:"Dismisses her concern entirely and rushes into the reading, making her feel unheard."}]},
+  {c:"Fine. We've been together 3 years and lately he just... shuts down. Goes cold. I ask what's wrong and he says nothing. It's infuriating. And probably not something you can actually help with.",o:[{t:"That coldness — being shut out by someone you love — is one of the most painful things to experience. You're not overreacting. What does it feel like when he goes distant like that?",q:"best",e:"Names her emotion accurately, validates it, and draws her deeper without pushing solutions too quickly."},{t:"Communication issues are very common in relationships. Have you tried writing him a letter about how you feel?",q:"wrong",e:"Jumps straight to advice before she feels heard — this will feel clinical and dismissive."},{t:"It sounds really frustrating. I can see why you're upset.",q:"acceptable",e:"Empathetic but surface-level — doesn't name the deeper emotion or invite her to go further."}]},
+  {c:"I feel like I'm always the one chasing. Always the one trying. And I'm exhausted. Maybe he just doesn't love me anymore. *pause* ...sorry, I don't know why I said that.",o:[{t:"Please don't apologize — what you just said took courage. That fear, that you might be loving someone who's pulling away... that's real and it deserves to be spoken out loud. How long have you been carrying that thought?",q:"best",e:"Honors her vulnerability, names the fear specifically, and keeps the space open for her to go deeper."},{t:"Don't worry, lots of people feel this way. Let me tune into the energy between you two.",q:"wrong",e:"Minimizes her vulnerability with 'lots of people' and pivots away before she feels truly heard."},{t:"That's a really heavy thought to carry. It makes sense you're exhausted.",q:"acceptable",e:"Warm and validating, but misses the opportunity to name the specific fear she just voiced."}]},
+  {c:"About two years, I guess. Since he lost his job. He changed after that. I don't know if it's me or him or… I just don't know anything anymore.",o:[{t:"That shift after job loss is profound — for many men it quietly shakes their sense of self, and that pain can come out as distance. This may not be about you at all. How have you been holding up?",q:"best",e:"Provides meaningful context that reframes her self-blame, then turns care back to her wellbeing."},{t:"His job loss was probably very hard on him. You should try to be patient.",q:"wrong",e:"Shifts responsibility onto her to endure, which adds to her burden rather than relieving it."},{t:"Two years is a long time to carry this uncertainty. That must be exhausting for you.",q:"acceptable",e:"Empathetic, but doesn't offer any reframing that could help her see the situation differently."}]},
+  {c:"Honestly? Not great. I've been sleeping badly, I stopped going to the gym, I just feel stuck. *quiet* You know, you're actually easier to talk to than I expected.",o:[{t:"I'm really glad you gave this a chance. What you're describing — the sleep, the loss of routine — your body is telling you something important. What used to bring you peace before all of this started?",q:"best",e:"Receives her trust warmly, connects physical symptoms to emotional truth, and pivots toward her own resources."},{t:"Thank you! Now, I'm sensing a lot of hope around your relationship — shall I share what I see?",q:"wrong",e:"Acknowledges the compliment but immediately pivots to the reading, losing the intimate moment she offered."},{t:"I'm glad. You deserve a space to be heard. Things will get better, I believe that for you.",q:"acceptable",e:"Warm but generic — reassurance without grounding or a meaningful next step."}]},
+  {c:"I used to paint. Haven't touched my brushes in over a year. I think I gave up on myself somewhere along the way.",o:[{t:"That line — 'I gave up on myself' — I want you to sit with how significant that is. The painting isn't just a hobby; it's the part of you that still belongs entirely to you. What would it feel like to pick up the brush again, even for five minutes?",q:"best",e:"Elevates her self-insight into a meaningful moment and offers a small concrete invitation rather than big advice."},{t:"You should try painting again — creative expression is very healing and could really help your relationship too.",q:"wrong",e:"Turns a vulnerable moment into advice, linking it to the relationship makes it feel like a task."},{t:"A year without something you love — that's a quiet kind of grief. I hear that.",q:"acceptable",e:"Beautiful and empathetic, but stops short of inviting her to take any step forward."}]}
+],
+chaotic:[
+  {c:"Okay so I need to know about my ex — wait, actually first, is Mercury in retrograde? Because everything is falling apart and I can't tell if it's the universe or just me and also my boss said something weird and— sorry, what should I even ask you first?",o:[{t:"Take a breath — there's a lot coming through and that's okay. The relationship is clearly sitting heaviest on you right now. Can we start there?",q:"best",e:"Calms the scatter without dismissing anything, and gently structures the conversation by following her energy."},{t:"Mercury retrograde can definitely cause chaos! Yes, communication is very affected right now. That explains a lot.",q:"wrong",e:"Gets pulled into the side question and loses the emotional thread entirely."},{t:"It sounds like a lot is going on. What feels most urgent to you right now?",q:"acceptable",e:"Reasonable, but putting the structure back on her when she's overwhelmed may produce more chaos."}]},
+  {c:"Yes — no — okay, the relationship. So we broke up. But we're not officially broken up? Like he said he 'needs space' but then texted me last night and I don't know if that means he misses me or if he's just bored and I don't know what I want either honestly.",o:[{t:"So you're in the middle — not in, not out, and both of you are unclear. That in-between space is one of the hardest places to be. Before we look at what he might want — what does your gut say you actually need from this relationship?",q:"best",e:"Validates the painful ambiguity and reframes the question toward her own clarity rather than decoding him."},{t:"If he texted you, that definitely means he still has feelings. You should respond and see what happens.",q:"wrong",e:"Makes an unfounded assumption and gives directive advice before understanding what she actually wants."},{t:"The 'we need space' situation is always confusing. What did his text say?",q:"acceptable",e:"Curious and grounded, but pivots toward details of his text rather than her own feelings and needs."}]},
+  {c:"My gut says... I don't know. Maybe I'm only upset because he pulled away first? Like if I had broken up with him I'd probably be fine. OH — actually, can you look at my career really quick? I feel like my job might be part of why I'm so stressed.",o:[{t:"That's actually a really honest insight — wanting what we might lose. Let's hold onto that. And yes, we'll get to the career. But first: if the relationship resolved itself tomorrow, what would relief look like for you?",q:"best",e:"Honors the genuine insight, promises to address the career so she doesn't feel dismissed, and asks one focused question."},{t:"Sure, let's look at your career — what's going on with your boss?",q:"wrong",e:"Follows the scatter instead of gently holding structure — the session will become unfocused."},{t:"We can look at your career too. But let's finish the relationship topic first, then move on.",q:"acceptable",e:"Structured and fair, but a bit mechanical — doesn't reflect back the interesting self-insight she just had."}]},
+  {c:"Relief would be... just knowing. Either way. I hate the uncertainty more than I hate the idea of it being over. But also I love him? I don't know, maybe I love the idea of him. Is that the same thing?",o:[{t:"That's one of the most honest things someone can ask — and no, they're not the same. Loving a person means accepting who they actually are right now. Loving an idea means holding onto who you hoped they'd be. Which feels more true when you sit with it?",q:"best",e:"Takes her philosophical question seriously, offers a meaningful distinction, and turns it into real self-reflection."},{t:"Many people confuse love with attachment. You need to ask yourself if this relationship is serving your highest good.",q:"wrong",e:"Sounds spiritual but feels lecturing — keeps her at arm's length from genuine insight."},{t:"That's a really deep question. What do you think the difference is for you?",q:"acceptable",e:"Reflects it back thoughtfully, but misses the chance to offer a meaningful distinction."}]},
+  {c:"Honestly... maybe the idea. Because the actual him lately has been kind of distant and a bit selfish. Wow. I haven't said that out loud before. Sorry — can we look at the career thing now? I feel like I need to change the subject.",o:[{t:"What you just said took real courage — and I don't want to rush past it. We'll absolutely get to the career. But what you named just now — is that something you want to sit with, or does it feel too big right now?",q:"best",e:"Honors the breakthrough and gives her agency over whether to go deeper or shift."},{t:"Of course — what's happening at work?",q:"wrong",e:"Immediately follows her avoidance, letting her escape a genuine breakthrough moment."},{t:"That was a brave thing to say. Take your time — we can shift to career in a moment.",q:"acceptable",e:"Warm and respectful, but doesn't invite her to consider whether avoidance is what she actually needs."}]},
+  {c:"Both, I think. It feels big but also kind of... freeing? Okay, career: my boss keeps taking credit for my ideas and I'm exhausted and underpaid but also terrified to leave because what if something worse?",o:[{t:"I hear both things. Here's what I notice: in both your relationship and your work, you're staying in something uncomfortable because the unknown feels scarier. Does that pattern feel familiar to you?",q:"best",e:"Connects the two themes meaningfully — gives her a genuine insight that ties the whole session together."},{t:"Your boss taking credit is a serious issue. You should document everything and speak to HR.",q:"wrong",e:"Practical advice that misses the emotional pattern and turns the session into career coaching."},{t:"That fear of something worse is very common. What would your ideal work situation actually look like?",q:"acceptable",e:"Moves forward constructively but misses the opportunity to connect the career pattern to the relationship insight."}]}
+],
+silent:[
+  {c:"...hi.",o:[{t:"Hi. I'm glad you called. Take all the time you need — there's no rush here.",q:"best",e:"Warm, brief, and removes pressure immediately. Gives her permission to move at her own pace."},{t:"Hello! It's wonderful to connect with you today. What brought you in?",q:"wrong",e:"Too much energy for someone who is clearly withdrawn. The enthusiasm will feel jarring."},{t:"Hi there. What's on your mind today?",q:"acceptable",e:"Neutral and calm, but an open question this early may feel overwhelming for someone this guarded."}]},
+  {c:"...yeah. I don't really know why I called.",o:[{t:"That's okay. Sometimes we reach out before we have the words. Is there something weighing on you lately — even if it's hard to name?",q:"best",e:"Normalizes not knowing, and offers a soft low-pressure invitation rather than a direct question."},{t:"Well, I'm here and ready to help! Why don't you tell me a little about yourself?",q:"wrong",e:"Cheerful and directive — asking for personal info immediately will feel intrusive."},{t:"That's fine. What would you like to talk about?",q:"acceptable",e:"Non-pressuring, but another open question puts the full weight of the conversation back on her."}]},
+  {c:"...a friend. She stopped talking to me. Three months ago.",o:[{t:"Three months of silence from someone close — that's a long time to carry that. Do you have any idea why she pulled away, or did it happen without any explanation?",q:"best",e:"Acknowledges the weight before asking anything. The question is specific and answerable — not open-ended."},{t:"Oh, that's so hard. How long were you friends?",q:"acceptable",e:"Empathetic and curious, but pivoting to history before acknowledging her current pain delays connection."},{t:"Have you tried reaching out to her to find out why?",q:"wrong",e:"Jumps straight to problem-solving before she feels heard."}]},
+  {c:"No explanation. Just... stopped.",o:[{t:"That kind of silence — no reason, no goodbye — can feel almost worse than a fight. At least a fight gives you something to hold onto. Does it feel more like confusion, or more like hurt?",q:"best",e:"Validates the specific pain of unexplained endings, then offers an A/B question which is easier to answer."},{t:"That must be really confusing. Do you think you might have done something to upset her?",q:"wrong",e:"Inadvertently implies fault on her side, which will make her feel worse and close down completely."},{t:"That's really painful. I'm sorry.",q:"acceptable",e:"Genuinely warm, but stops there — she needs a small nudge to keep opening up."}]},
+  {c:"...both. Mostly hurt.",o:[{t:"Mostly hurt. That makes sense. Losing a friend without knowing why leaves a wound that's hard to explain to people. Have you been able to talk to anyone about it, or have you mostly been carrying it alone?",q:"best",e:"Validates her answer specifically and asks a concrete yes/no style question to gently continue opening her up."},{t:"Hurt is such a natural response. In time, this will pass and you'll find clarity.",q:"wrong",e:"'In time this will pass' dismisses her current pain and feels hollow."},{t:"Have you thought about what you'd want to say to her if you could?",q:"acceptable",e:"Interesting question, but may feel too hypothetical or emotionally demanding for where she is right now."}]},
+  {c:"...alone. I don't really talk about things.",o:[{t:"I noticed that — and you don't have to be good at talking for this to be useful. You've already said more than you think. The fact that you called at all means something. What would feel like even the smallest relief right now?",q:"best",e:"Honors her self-awareness, affirms her courage, and ends with a small manageable question."},{t:"It's important to have people to talk to. Have you considered therapy or a support group?",q:"wrong",e:"Immediately deflects to outside resources, which can feel like being passed off."},{t:"I'm glad you're talking now. Even a little. That takes courage.",q:"acceptable",e:"Warm affirmation, but stops without giving her anywhere to go next."}]}
+],
+emotional:[
+  {c:"*voice shaking* I'm sorry. I don't even know how to start. My husband told me last week that he's... he's not sure he loves me anymore. We have two kids. I just— *breaks off*",o:[{t:"Please don't apologize. You don't need to have the right words — just take a breath. I'm right here with you. What you're feeling right now is real, and it makes complete sense.",q:"best",e:"Removes the pressure to perform, meets her exactly where she is, and creates safety before anything else."},{t:"Oh my goodness, I'm so sorry. That must have been such a shock. How long have you been married?",q:"acceptable",e:"Empathetic, but pivoting to facts before she's had a chance to land emotionally."},{t:"I can feel how much pain you're in. Let me look at the energy between you and your husband.",q:"wrong",e:"Moves to the reading too fast — she needs to feel held before anything else, not analyzed."}]},
+  {c:"*crying softly* I keep thinking — what did I do wrong? I must have done something. Eight years and two children and I just... I must be impossible to love.",o:[{t:"I need you to hear me say this: you are not impossible to love. What you're feeling — that need to find a reason, to make it your fault — is what heartbreak does to us. It turns pain into self-blame. But his struggle is not proof of your worth.",q:"best",e:"Directly and gently challenges the self-blame without dismissing the pain — gives her something solid to hold onto."},{t:"You shouldn't blame yourself. These things are usually about both people, not just one.",q:"acceptable",e:"Tries to relieve the blame but 'both people' may unintentionally reinforce the idea that she's partly at fault."},{t:"I can see you're in a lot of pain. Have you two considered couples therapy? It might really help.",q:"wrong",e:"Far too early for solutions — she's in acute distress and needs to feel held, not redirected to action steps."}]},
+  {c:"*quiet* I don't know if I believe that. I look in the mirror and I don't recognize myself anymore. I've just been... disappearing. Into being a mom, a wife. I don't know who I am outside of them.",o:[{t:"That — 'disappearing into being a mom and a wife.' That is one of the most honest and heartbreaking things a woman can realize. You haven't lost yourself. But you've been living so far from yourself that it feels like loss. Who were you before?",q:"best",e:"Takes her words seriously, reframes loss of self as distance rather than disappearance, and opens up her identity."},{t:"You're still in there. Sometimes we just lose sight of ourselves. You'll find your way back.",q:"acceptable",e:"Comforting but too quick — feels generic and doesn't honor the depth of what she just shared."},{t:"Self-care is so important, especially for mothers. When did you last do something just for you?",q:"wrong",e:"Turns a profound identity crisis into a self-care tip, which will feel completely inadequate."}]},
+  {c:"*long pause* ...before. Before kids, before him. I used to write. I had friends. I had opinions about things. *small laugh* I can't remember the last time someone asked me that.",o:[{t:"That laugh — I heard it. That's her. That's the woman who wrote things and had opinions. She's not gone. She's just been waiting for someone to ask. What did you used to write?",q:"best",e:"Catches the tiny breakthrough in her laugh and reflects it back as evidence she still exists."},{t:"It sounds like you had a real identity before all of this. It's important to reconnect with that part of yourself.",q:"acceptable",e:"True and thoughtful, but a bit detached — sounds like advice rather than genuine presence."},{t:"You should try to reconnect with those friends. A support network is so important right now.",q:"wrong",e:"Leaps to a practical suggestion in a moment that was opening into something much more personal."}]},
+  {c:"Just... stories. Mostly about women finding their way. *pause* That's funny, isn't it. *voice breaks again* I'm sorry, I keep crying.",o:[{t:"Don't apologize for the tears — they belong here. And no, it's not funny. It's beautiful and it's true. You've been writing about women finding their way, and now you're standing at the beginning of your own story. What would the woman in your stories do right now?",q:"best",e:"Honors her tears, reframes her situation through her own creative identity, and asks a question that empowers."},{t:"That is meaningful — you were drawn to those stories for a reason. I think you knew you'd need them.",q:"acceptable",e:"Insightful and warm, but stops just before the most empowering question."},{t:"Please don't cry — you're going to be okay. I truly believe things will work out for you.",q:"wrong",e:"Asking her not to cry shuts down the emotion. 'Things will work out' is hollow reassurance."}]},
+  {c:"*quietly* She would stop apologizing for taking up space. *pause* I think I need to talk to him. Really talk. Not fix it — just... say true things.",o:[{t:"Yes. That. 'Say true things.' Hold onto those words — they came from the truest part of you. Whatever happens in that conversation, you will have shown up as yourself. That matters more than the outcome. How do you feel right now, compared to when you first called?",q:"best",e:"Affirms her own wisdom, anchors the session's journey, and reflects her growth back to her."},{t:"That's a really healthy instinct. Communication is the foundation of any relationship.",q:"wrong",e:"Turns her profound personal breakthrough into a generic communication tip — completely deflates the moment."},{t:"I think that's exactly right. Being honest with him is the best thing you can do.",q:"acceptable",e:"Affirming but flat — validates the plan without honoring the depth of insight she arrived at on her own."}]}
+]
+};
+
+const LMAP={aggressive:'⚡ Aggressive',chaotic:'🌀 Chaotic',silent:'🌑 Silent',emotional:'💧 Emotional'};
+const IMAP={aggressive:'⚡',chaotic:'🌀',silent:'🌑',emotional:'💧'};
+const SUMMARIES={
+  aggressive:"Working with aggressive callers requires patience and firmness in equal measure. The key is to never match their energy — stay grounded, acknowledge their doubt without defending yourself, and let the conversation breathe. When you held space instead of reacting, you created the conditions for trust to emerge.",
+  chaotic:"With chaotic callers, your job is to be the structure they can't provide themselves. The instinct to follow every thread is natural, but the most powerful thing you can do is gently anchor one feeling at a time. Notice when they have unexpected moments of clarity — those are breakthroughs worth pausing for.",
+  silent:"Silent callers need the quietest kind of skill: the ability to make space feel safe without filling it. Avoid open questions early on. Yes/no and A/B questions give them something to hold onto. Every word she offered was a small act of trust.",
+  emotional:"Emotional callers need to feel held before they can be helped. Resist every impulse to fix, advise, or reassure too early — it breaks the container. Your role is to witness, name emotions accurately, and follow their lead. The breakthroughs in these calls almost always come from the caller, not the advisor."
+};
+
+let type=null,turn=0,scores=[],scenario=[];
+
+// PARTICLES
+const canvas=document.getElementById('particles');
+const ctx=canvas.getContext('2d');
+let parts=[];
+function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+resizeCanvas();window.addEventListener('resize',resizeCanvas);
+
+function spawnParticles(x,y,kind){
+  const colors=kind==='best'?['#5cce8f','#a8f0c6','#6378FD','#5CCEFF','#ffffff']:['#6378FD','#5CCEFF','#F06050','#e8c97a','#5cce8f','#ffffff','#ff9de2'];
+  const count=kind==='confetti'?90:32;
+  for(let i=0;i<count;i++){
+    const angle=Math.random()*Math.PI*2;
+    const spd=kind==='confetti'?(Math.random()*7+3):(Math.random()*6+3);
+    parts.push({
+      x,y,
+      vx:Math.cos(angle)*spd*(kind==='confetti'?1.8:1),
+      vy:Math.sin(angle)*spd*(kind==='confetti'?-1.4:-1.3),
+      size:Math.random()*5+2,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      alpha:1,gravity:kind==='confetti'?0.14:0.11,
+      rotation:Math.random()*360,rotSpeed:(Math.random()-.5)*10,
+      shape:kind==='confetti'&&Math.random()>.4?'rect':'circle'
+    });
+  }
+}
+
+function launchFireworks(){
+  for(let i=0;i<6;i++){
+    setTimeout(()=>{
+      spawnParticles(Math.random()*canvas.width, Math.random()*canvas.height*.55,'confetti');
+    },i*200);
+  }
+}
+
+function animLoop(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  parts=parts.filter(p=>p.alpha>0.01);
+  parts.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.vy+=p.gravity;p.vx*=0.98;
+    p.alpha-=0.017;p.rotation+=p.rotSpeed;
+    ctx.save();ctx.globalAlpha=Math.max(0,p.alpha);ctx.fillStyle=p.color;
+    ctx.translate(p.x,p.y);ctx.rotate(p.rotation*Math.PI/180);
+    if(p.shape==='rect'){ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*1.8);}
+    else{ctx.beginPath();ctx.arc(0,0,p.size/2,0,Math.PI*2);ctx.fill();}
+    ctx.restore();
+  });
+  requestAnimationFrame(animLoop);
+}
+animLoop();
+
+function animCount(el,target,decimals){
+  decimals=decimals||0;
+  let cur=0;const steps=25;const inc=target/steps;
+  const iv=setInterval(()=>{
+    cur=Math.min(cur+inc,target);
+    el.textContent=decimals?cur.toFixed(decimals):Math.round(cur);
+    if(cur>=target)clearInterval(iv);
+  },35);
+}
+
+function pick(card){
+  document.querySelectorAll('.tcard').forEach(c=>c.classList.remove('sel'));
+  card.classList.add('sel');type=card.dataset.type;
+  document.getElementById('goBtn').disabled=false;
+}
+
+function start(){
+  if(!type)return;
+  turn=0;scores=[];scenario=SC[type];
+  document.getElementById('inner').innerHTML='';
+  document.getElementById('intro').classList.remove('on');
+  document.getElementById('sim').classList.add('on');
+  document.getElementById('liveLabel').textContent=LMAP[type];
+  pill();showTurn();
+}
+
+function pill(){document.getElementById('turnPill').textContent=`Turn ${turn+1} of ${scenario.length}`;}
+
+function showTurn(){
+  addCaller(scenario[turn].c);
+  setTimeout(()=>addChoices(scenario[turn].o),200);
+}
+
+function addEl(el){
+  document.getElementById('inner').appendChild(el);
+  window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+}
+
+function addCaller(txt){
+  const d=document.createElement('div');d.className='c-row';
+  d.innerHTML=`<div class="c-av">${IMAP[type]}</div><div style="flex:1;max-width:520px"><div class="c-lbl">Caller</div><div class="c-bub">${esc(txt)}</div></div>`;
+  addEl(d);
+}
+
+function addChoices(opts){
+  const shuffled=[...opts].sort(()=>Math.random()-.5);
+  const w=document.createElement('div');w.className='choices-wrap';
+  const lbl=document.createElement('div');lbl.className='choices-lbl';lbl.textContent='How do you respond?';
+  const list=document.createElement('div');list.className='choices-list';
+  shuffled.forEach((o,i)=>{
+    const b=document.createElement('button');b.className='c-btn';b.textContent=o.t;
+    b.addEventListener('click',()=>chosen(shuffled,i,list,b));
+    list.appendChild(b);
+  });
+  w.appendChild(lbl);w.appendChild(list);addEl(w);
+}
+
+function chosen(opts,idx,list,btn){
+  const sel=opts[idx];
+  const score={best:10,acceptable:6,wrong:2}[sel.q];
+  scores.push(score);
+  const r=btn.getBoundingClientRect();
+  if(sel.q==='best') spawnParticles(r.left+r.width/2,r.top+r.height/2,'best');
+  list.querySelectorAll('.c-btn').forEach((b,i)=>{
+    b.disabled=true;
+    const q=opts[i].q;
+    if(q==='best'){b.classList.add('correct');b.innerHTML+=`<span class="c-tag tag-ok">✓ Best</span>`;}
+    else if(i===idx){b.classList.add('wrong-pick');b.innerHTML+=`<span class="c-tag tag-no">✗ Your pick</span>`;}
+    else b.classList.add('neutral');
+  });
+  addFeedback(opts,idx,score);
+}
+
+function addFeedback(opts,idx,score){
+  const sel=opts[idx];
+  const best=opts.find(o=>o.q==='best');
+  const wrong=opts.find(o=>o.q==='wrong');
+  const col=score>=9?'#5cce8f':score>=5?'#e8c97a':'#F06050';
+  const lbl=score>=9?'Excellent':score>=5?'Acceptable':'Needs Work';
+
+  const card=document.createElement('div');card.className='fb-card';
+
+  const scoreNumEl=document.createElement('span');scoreNumEl.textContent='0';
+  const scoreEl=document.createElement('div');scoreEl.className='fb-score';scoreEl.style.color=col;
+  scoreEl.appendChild(scoreNumEl);
+  const slash=document.createElement('span');slash.style.cssText='font-size:11px;font-weight:400;color:#8892b0;font-family:Questrial,sans-serif';slash.textContent='/10';
+  scoreEl.appendChild(slash);
+
+  const lblDiv=document.createElement('div');
+  lblDiv.innerHTML=`<div style="font-size:12px;color:${col};font-style:italic;font-family:'Lora',serif">${lbl}</div><div style="font-size:9px;color:#8892b0;letter-spacing:.1em;text-transform:uppercase;font-family:'Questrial',sans-serif">Your choice</div>`;
+
+  const hdr=document.createElement('div');hdr.className='fb-hdr';
+  hdr.appendChild(scoreEl);hdr.appendChild(lblDiv);card.appendChild(hdr);
+
+  let bodyHtml='';
+  if(best)bodyHtml+=`<div class="fb-row"><div class="fb-rlbl">✓ Why the best answer works</div><div class="fb-good">${esc(best.e)}</div></div>`;
+  if(wrong)bodyHtml+=`<div class="fb-row" style="margin-top:8px"><div class="fb-rlbl">✗ Why the wrong answer fails</div><div class="fb-bad">${esc(wrong.e)}</div></div>`;
+  if(sel.q==='acceptable')bodyHtml+=`<div class="fb-row" style="margin-top:8px"><div class="fb-rlbl">↑ What held your choice back</div><div class="fb-mid">${esc(sel.e)}</div></div>`;
+  const body=document.createElement('div');body.innerHTML=bodyHtml;card.appendChild(body);
+  addEl(card);
+
+  setTimeout(()=>animCount(scoreNumEl,score),150);
+
+  turn++;
+  const isLast=turn>=scenario.length;
+  const nb=document.createElement('button');nb.className='next-btn';
+  nb.textContent=isLast?'✦ See your results →':'Next turn →';
+  nb.addEventListener('click',()=>{nb.remove();if(isLast)endSim();else{pill();showTurn();}});
+  addEl(nb);
+}
+
+function endSim(){
+  const avg=scores.reduce((a,b)=>a+b,0)/scores.length;
+  const avgF=avg.toFixed(1);
+  const medal=avg>=8.5?'✦':avg>=7?'◈':avg>=5?'◇':'○';
+  if(avg>=8) setTimeout(launchFireworks,400);
+
+  const el=document.createElement('div');el.className='end-wrap';
+  const medalEl=document.createElement('div');medalEl.className='medal';medalEl.textContent=medal;
+  const title=document.createElement('div');title.className='end-title';title.textContent='Session Complete';
+  const typeEl=document.createElement('div');typeEl.className='end-type';typeEl.textContent=`${LMAP[type]} · ${scenario.length} turns`;
+  const numEl=document.createElement('div');numEl.className='end-num';numEl.textContent='0.0';
+  const sub=document.createElement('div');sub.className='end-sub';sub.textContent='Average Score / 10';
+  const box=document.createElement('div');box.className='end-box';box.textContent=SUMMARIES[type];
+  const btn=document.createElement('button');btn.className='again-btn';btn.textContent='✦ Start New Simulation';
+  btn.addEventListener('click',goHome);
+  [medalEl,title,typeEl,numEl,sub,box,btn].forEach(e=>el.appendChild(e));
+  addEl(el);
+  setTimeout(()=>animCount(numEl,parseFloat(avgF),1),500);
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+function goHome(){
+  document.getElementById('sim').classList.remove('on');
+  document.getElementById('inner').innerHTML='';
+  document.getElementById('intro').classList.add('on');
+  document.querySelectorAll('.tcard').forEach(c=>c.classList.remove('sel'));
+  type=null;turn=0;scores=[];
+  document.getElementById('goBtn').disabled=true;
+  window.scrollTo({top:0});
+}
+</script>
+</body>
+</html>
